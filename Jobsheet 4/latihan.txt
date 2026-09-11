@@ -1,0 +1,244 @@
+================================================================================
+                    LATIHAN & TUGAS PRAKTIKUM JOBSHEET 4
+            DESAIN WIREFRAME, USER FLOW, DAN SKENARIO SISTEM
+================================================================================
+
+--------------------------------------------------------------------------------
+1. WIREFRAME HALAMAN BARU: REGISTRASI ANGGOTA BARU (AKTOR: TAMU)
+--------------------------------------------------------------------------------
+
+Konvensi Simbol:
+- [ ]  : Field input teks atau tombol
+- (•)  : Radio button terpilih
+- ( )  : Radio button tidak terpilih
+- ---  : Garis pemisah / divider horizontal
+
++-------------------------------------------------------------+
+| SIMPUS-Mini                                                 |
+| [Beranda]  [Katalog Buku]  [Registrasi]  [Login Petugas]    |
++-------------------------------------------------------------+
+|                                                             |
+| Registrasi Anggota Baru                                     |
+| Silakan lengkapi formulir pendaftaran berikut:              |
+| ----------------------------------------------------------- |
+|                                                             |
+| Nomor Identitas (NIK / NISN):                               |
+| [ 3507xxxxxxxxxxxx                                        ] |
+|                                                             |
+| Nama Lengkap:                                               |
+| [ Masukkan nama sesuai KTP/Kartu Pelajar                  ] |
+|                                                             |
+| Jenis Kelamin:                                              |
+| (•) Laki-laki    ( ) Perempuan                              |
+|                                                             |
+| Alamat Email:                                               |
+| [ contoh@email.com                                        ] |
+|                                                             |
+| Nomor HP / WhatsApp:                                        |
+| [ 08xxxxxxxxxx                                            ] |
+|                                                             |
+| Alamat Tempat Tinggal:                                      |
+| [ Jalan, RT/RW, Kelurahan, Kecamatan                      ] |
+|                                                             |
+| [ [Daftar Sekarang] ]   [ Batal ]                           |
+|                                                             |
+| Sudah punya akun? [Login di sini]                           |
++-------------------------------------------------------------+
+| (c) 2026 SIMPUS-Mini -- Sistem Perpustakaan Mini            |
++-------------------------------------------------------------+
+
+
+--------------------------------------------------------------------------------
+2. USER FLOW: PETUGAS MENCARI ANGGOTA DENGAN TUNGGAKAN JATUH TEMPO
+--------------------------------------------------------------------------------
+
+[Mulai: Petugas di Dashboard]
+         |
+         v
+[Klik Menu 'Laporan / Sirkulasi']
+         |
+         v
+[Pilih Filter 'Keterlambatan / Jatuh Tempo']
+         |
+         v
+[Sistem Memeriksa Data Peminjaman Aktif]
+         |
+    +----+----+
+    |         |
+(Tidak Ada) (Ada Data Terlambat)
+    |         |
+    |         v
+    |   [Tampilkan Tabel Daftar Keterlambatan]
+    |   - Nama Anggota
+    |   - Judul Buku
+    |   - Tanggal Pinjam & Jatuh Tempo
+    |   - Jumlah Hari Terlambat
+    |   - Akumulasi Denda (Rp)
+    |         |
+    |         v
+    |   {Pilihan Aksi Petugas}
+    |   +-- (A) [Kirim Notifikasi / WhatsApp Peringatan]
+    |   +-- (B) [Proses Pengembalian & Pembayaran Denda]
+    |   +-- (C) [Ekspor Data ke File Laporan PDF/Excel]
+    |         |
+    +----+----+
+         |
+         v
+     [Selesai]
+
+
+--------------------------------------------------------------------------------
+3. SKENARIO MASALAH & IDENTIFIKASI EDGE CASE
+--------------------------------------------------------------------------------
+
+A. Meminjam Buku yang Sama Dua Kali Berturut-turut
+   - Masalah : Anggota meminjam judul buku yang sama sebelum buku pertama
+               dikembalikan.
+   - Solusi  : Sistem melakukan validasi riwayat pinjaman aktif. Jika ID Buku
+               dan ID Anggota sudah tercatat belum kembali, tolak peminjaman
+               dengan pesan: "Anggota sedang meminjam judul buku ini."
+
+B. Meminjam Saat Memiliki Denda Aktif
+   - Masalah : Anggota memiliki denda keterlambatan buku sebelumnya yang belum
+               dibayar.
+   - Solusi  : Sistem memblokir sementara hak peminjaman (status DITANGGUHKAN)
+               hingga seluruh denda diselesaikan.
+
+C. Stok Fisik Habis (Race Condition)
+   - Masalah : Dua petugas meminjamkan 1 sisa buku terakhir ke dua anggota
+               berbeda di waktu bersamaan.
+   - Solusi  : Pengecekan stok dilakukan secara realtime saat tombol 'Simpan'
+               ditekan. Jika stok = 0, gagalkan transaksi kedua dengan pesan:
+               "Stok buku baru saja habis."
+
+D. Masa Berlaku Keanggotaan Habis (Expired)
+   - Masalah : Anggota sudah lewat masa aktif tahunan.
+   - Solusi  : Sistem menampilkan peringatan pembaruan kartu anggota sebelum
+               transaksi dapat dilanjutkan.
+
+E. Tanggal Jatuh Tempo Jatuh pada Hari Libur
+   - Masalah : Tanggal pengembalian jatuh pada hari Minggu atau libur nasional.
+   - Solusi  : Sistem otomatis memajukan batas jatuh tempo ke hari kerja
+               berikutnya tanpa mengenakan denda tambahan.
+
+
+--------------------------------------------------------------------------------
+4. USER FLOW & WIREFRAME SKENARIO MASALAH (VALIDATION / REJECTION)
+--------------------------------------------------------------------------------
+
+Flowchart Skenario Masalah:
+[Input Form Peminjaman]
+         |
+         v
+{Cek Status Anggota} -----> [Tidak Aktif] -> (Error: Akun Kadaluarsa)
+         | (Aktif)
+         v
+{Cek Denda Aktif}   -----> [Ada Denda]    -> (Error: Selesaikan Denda Dulu)
+         | (Bebas Denda)
+         v
+{Cek Duplikat Judul} ----> [Duplikat]     -> (Error: Buku Masih Dipinjam)
+         | (Unik)
+         v
+{Cek Sisa Stok}     -----> [Stok = 0]     -> (Error: Stok Habis)
+         | (Stok > 0)
+         v
+[Peminjaman Sukses & Stok Berkurang]
+
+Wireframe Halaman Peringatan / Error:
++-------------------------------------------------------------+
+| SIMPUS-Mini                                                 |
+| [Beranda]  [Daftar Buku]  [Daftar Anggota]  [Sirkulasi]     |
++-------------------------------------------------------------+
+|                                                             |
+| Transaksi Peminjaman Buku                                   |
+| ----------------------------------------------------------- |
+|                                                             |
+|  /!\ PERINGATAN: TRANSAKSI TIDAK DAPAT DIPROSES             |
+|  +-------------------------------------------------------+  |
+|  | [!] Anggota ini memiliki kendala sistem:              |  |
+|  | 1. Memiliki denda aktif sebesar: Rp 15.000            |  |
+|  |    (Keterlambatan buku "Laskar Pelangi" - 15 hari)    |  |
+|  | 2. Buku "Bumi Manusia" yang dipilih stoknya habis (0) |  |
+|  +-------------------------------------------------------+  |
+|                                                             |
+| Data Peminjam:                                              |
+| * No. Anggota : AGT-004                                     |
+| * Nama        : Ahmad Dahlan                                |
+| * Status      : DITANGGUHKAN (Menunggu Pembayaran Denda)   |
+|                                                             |
+| Tindakan yang Diperlukan:                                   |
+| [ [Bayar Denda & Buka Blokir] ]   [ Ganti Buku ]   [ Batal ]|
+|                                                             |
++-------------------------------------------------------------+
+| (c) 2026 SIMPUS-Mini -- Sistem Perpustakaan Mini            |
++-------------------------------------------------------------+
+
+
+--------------------------------------------------------------------------------
+5. IMPLEMENTASI HTML STATIS: FORM LOGIN PETUGAS
+--------------------------------------------------------------------------------
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SIMPUS-Mini | Login Petugas</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>SIMPUS-Mini</h1>
+      <input type="checkbox" id="nav-toggle" class="nav-toggle" />
+      <label for="nav-toggle" class="nav-toggle-label">&#9776;</label>
+      <nav>
+        <ul>
+          <li><a href="index.html">Beranda</a></li>
+          <li><a href="buku/list.html">Daftar Buku</a></li>
+          <li><a href="anggota/list.html">Daftar Anggota</a></li>
+          <li><a href="login.html">Login</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <section>
+        <h2>Login Petugas</h2>
+        <p>Masukkan nama pengguna dan kata sandi untuk mengakses sistem.</p>
+        
+        <form action="#" method="post">
+          <p>
+            <label for="username">Nama Pengguna / Email</label><br />
+            <input 
+              type="text" 
+              id="username" 
+              name="username" 
+              placeholder="Masukkan username atau email" 
+              required 
+            />
+          </p>
+          <p>
+            <label for="password">Kata Sandi</label><br />
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              placeholder="Masukkan kata sandi" 
+              required 
+            />
+          </p>
+          <p>
+            <button type="submit">Masuk</button>
+          </p>
+          <p>
+            <a href="index.html">&larr; Kembali ke Beranda</a>
+          </p>
+        </form>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 SIMPUS-Mini &mdash; Jobsheet 4</p>
+    </footer>
+  </body>
+</html>
