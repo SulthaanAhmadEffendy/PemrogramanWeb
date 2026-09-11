@@ -1,0 +1,3 @@
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/Jobsheet3Bootstrap/$1" }]
+}
