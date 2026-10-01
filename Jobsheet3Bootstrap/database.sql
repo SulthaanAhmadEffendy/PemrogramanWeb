@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS buku (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    judul VARCHAR(255) NOT NULL,
+    pengarang VARCHAR(255) NOT NULL,
+    tahun SMALLINT UNSIGNED NOT NULL,
+    isbn VARCHAR(32) NULL,
+    stok INT UNSIGNED NOT NULL DEFAULT 0,
+    kategori VARCHAR(50) NOT NULL,
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS anggota (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    nama VARCHAR(255) NOT NULL,
+    no_anggota VARCHAR(100) NOT NULL,
+    alamat TEXT NULL,
+    no_hp VARCHAR(30) NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_anggota_no_anggota (no_anggota)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
