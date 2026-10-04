@@ -1,0 +1,4 @@
+# Folder foto: jangan pernah menjalankan skrip di sini
+<FilesMatch "\.(php|phtml|phar)$">
+    Require all denied
+</FilesMatch>
