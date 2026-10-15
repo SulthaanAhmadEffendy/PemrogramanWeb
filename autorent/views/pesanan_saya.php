@@ -11,6 +11,13 @@
             <?php foreach ($daftar_pesanan as $o):
                 [$label, $kelas] = label_status($o['status_sewa']);
                 $kembali = tgl_kembali($o['tanggal_pinjam'], $o['lama_hari']);
+                if ($o['status_sewa'] === 'berjalan' && $o['tanggal_pinjam'] > date('Y-m-d')) {
+                    $label = 'Disetujui, terjadwal';
+                    $kelas = 'status-wait';
+                } elseif ($o['status_sewa'] === 'berjalan' && $kembali < date('Y-m-d')) {
+                    $label = 'Terlambat dikembalikan';
+                    $kelas = 'status-late';
+                }
             ?>
                 <tr>
                     <td>

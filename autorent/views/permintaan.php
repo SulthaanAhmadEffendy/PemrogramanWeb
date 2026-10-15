@@ -1,5 +1,6 @@
 <section id="permintaan" class="mb-5">
     <h2 class="section-title mb-3">Permintaan sewa dari pelanggan</h2>
+    <?php if ($daftar_permintaan): ?>
     <div class="panel p-0 panel-wait">
         <div class="table-responsive">
         <table class="table align-middle mb-0">
@@ -27,13 +28,13 @@
                     </td>
                     <td class="text-end fw-semibold text-nowrap"><?= rupiah($r['total_biaya']) ?></td>
                     <td class="text-end text-nowrap">
-                        <?php if ($r['unit_sibuk']): ?>
+                        <?php if (db_bool($r['unit_sibuk'])): ?>
                             <span class="small text-secondary me-2">Unit masih disewa</span>
                         <?php endif; ?>
                         <form method="POST" action="proses.php" class="d-inline">
                             <?= csrf_field() ?><input type="hidden" name="aksi" value="setujui">
                             <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-                            <button type="submit" class="btn btn-sm btn-primary" <?= $r['unit_sibuk'] ? 'disabled' : '' ?>>Setujui</button>
+                            <button type="submit" class="btn btn-sm btn-primary" <?= db_bool($r['unit_sibuk']) ? 'disabled' : '' ?>>Setujui</button>
                         </form>
                         <form method="POST" action="proses.php" class="d-inline" onsubmit="return confirm('Tolak permintaan ini?');">
                             <?= csrf_field() ?><input type="hidden" name="aksi" value="tolak">
@@ -47,4 +48,7 @@
         </table>
         </div>
     </div>
+    <?php else: ?>
+    <div class="panel text-secondary">Belum ada permintaan sewa yang perlu ditinjau.</div>
+    <?php endif; ?>
 </section>

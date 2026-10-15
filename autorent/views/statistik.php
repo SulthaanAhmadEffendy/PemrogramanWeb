@@ -1,4 +1,4 @@
-<section class="hero">
+<section class="hero hero-admin">
     <div class="container">
         <div class="d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div>
@@ -18,6 +18,6 @@
         <div class="col-6 col-lg-3"><div class="stat"><span>Unit tersedia</span><strong><?= $unit_tersedia ?></strong></div></div>
         <div class="col-6 col-lg-3"><div class="stat"><span>Sedang disewa</span><strong><?= $unit_disewa ?></strong></div></div>
         <div class="col-6 col-lg-3"><div class="stat <?= $jumlah_menunggu ? 'warn' : '' ?>"><span>Permintaan menunggu</span><strong><?= $jumlah_menunggu ?></strong></div></div>
-        <div class="col-6 col-lg-3"><div class="stat"><span>Nilai sewa berjalan</span><strong class="money"><?= rupiah($pendapatan) ?></strong></div></div>
+        <div class="col-6 col-lg-3"><div class="stat"><span>Nilai sewa disetujui</span><strong class="money"><?= rupiah($pendapatan) ?></strong></div></div>
     </div>
 </div>

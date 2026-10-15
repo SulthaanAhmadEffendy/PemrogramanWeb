@@ -12,8 +12,9 @@
                 <label for="mobil_id" class="form-label">Mobil</label>
                 <select id="mobil_id" name="mobil_id" class="form-select mb-3" required>
                     <option value="" disabled selected>Pilih mobil</option>
-                    <?php foreach ($daftar_mobil as $m): if ($m['sedang_disewa']) continue; ?>
-                        <option value="<?= (int)$m['id'] ?>" data-tarif="<?= (int)$m['harga_per_hari'] ?>">
+                    <?php foreach ($daftar_mobil as $m): ?>
+                        <option value="<?= (int)$m['id'] ?>" data-tarif="<?= (int)$m['harga_per_hari'] ?>"
+                                data-periods="<?= e($m['periods'] ?? '[]') ?>">
                             <?= e($m['merk_mobil']) ?> (<?= e($m['no_polisi']) ?>) - <?= rupiah($m['harga_per_hari']) ?>/hari
                         </option>
                     <?php endforeach; ?>
@@ -27,7 +28,7 @@
                     </div>
                     <div class="col-5">
                         <label for="lama_hari" class="form-label">Lama (hari)</label>
-                        <input type="number" id="lama_hari" name="lama_hari" class="form-control" min="1" value="1" required>
+                        <input type="number" id="lama_hari" name="lama_hari" class="form-control" min="1" max="365" value="1" required>
                     </div>
                 </div>
                 <p class="small text-secondary mt-3 mb-0">Pesanan Anda akan dikonfirmasi oleh admin. Status bisa dilihat di "Pesanan saya".</p>

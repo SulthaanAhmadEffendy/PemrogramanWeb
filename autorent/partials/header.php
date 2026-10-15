@@ -34,6 +34,7 @@
         <div class="collapse navbar-collapse" id="menu">
             <ul class="navbar-nav me-auto ms-md-4">
                 <?php if ($p['role'] === 'admin'): ?>
+                    <li class="nav-item"><a class="nav-link" href="#permintaan">Permintaan</a></li>
                     <li class="nav-item"><a class="nav-link" href="#armada">Armada</a></li>
                     <li class="nav-item"><a class="nav-link" href="#sewa">Sewa berjalan</a></li>
                 <?php else: ?>
@@ -46,6 +47,14 @@
                     <?= e($p['nama']) ?>
                     <span class="role-chip"><?= $p['role'] === 'admin' ? 'Admin' : 'Pelanggan' ?></span>
                 </span>
+                <?php if ($p['role'] === 'admin'): ?>
+                <form method="POST" action="proses.php" class="m-0">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="aksi" value="keluar">
+                    <input type="hidden" name="ke_akun_pelanggan" value="1">
+                    <button type="submit" class="btn btn-sm btn-outline-light">Mode pelanggan</button>
+                </form>
+                <?php endif; ?>
                 <form method="POST" action="proses.php" class="m-0">
                     <?= csrf_field() ?>
                     <input type="hidden" name="aksi" value="keluar">

@@ -1,12 +1,56 @@
 <section id="armada" class="mb-5">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <h2 class="section-title"><?= $peran === 'admin' ? 'Armada' : 'Pilih mobil' ?></h2>
+    <div class="fleet-heading d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
+        <div>
+            <span class="eyebrow eyebrow-dark">TEMUKAN PERJALANAN BERIKUTNYA</span>
+            <h2 class="section-title"><?= $peran === 'admin' ? 'Kelola armada' : 'Mobil pilihan untukmu' ?></h2>
+            <p class="fleet-subtitle mb-0"><?= $peran === 'admin' ? 'Pantau ketersediaan dan catat penyewaan kendaraan.' : 'Pilih kendaraan yang pas, lalu pesan sesuai jadwalmu.' ?></p>
+        </div>
         <div class="btn-group btn-group-sm filter" role="group" aria-label="Filter armada">
-            <button type="button" class="btn active" data-filter="semua">Semua (<?= $jumlah_unit ?>)</button>
-            <button type="button" class="btn" data-filter="tersedia">Tersedia (<?= $unit_tersedia ?>)</button>
-            <button type="button" class="btn" data-filter="disewa">Disewa (<?= $unit_disewa ?>)</button>
+            <button type="button" class="btn active" data-filter="semua">Semua</button>
+            <button type="button" class="btn" data-filter="tersedia">Tersedia</button>
+            <button type="button" class="btn" data-filter="disewa">Jadwal penuh</button>
         </div>
     </div>
+
+    <?php if ($jumlah_unit > 0): ?>
+    <form id="fleetSearch" class="fleet-search mb-4" role="search" onsubmit="return false">
+        <label class="search-field search-keyword">
+            <span>Mobil apa yang kamu cari?</span>
+            <input type="search" id="cariMobil" placeholder="Cari nama mobil atau nomor polisi" autocomplete="off">
+        </label>
+        <label class="search-field">
+            <span>Transmisi</span>
+            <select id="filterTransmisi">
+                <option value="">Semua transmisi</option>
+                <option value="auto">Otomatis</option>
+                <option value="manual">Manual</option>
+            </select>
+        </label>
+        <label class="search-field">
+            <span>Tanggal mulai</span>
+            <input type="date" id="tanggalCari" value="<?= date('Y-m-d') ?>" min="<?= date('Y-m-d') ?>">
+        </label>
+        <label class="search-field search-duration">
+            <span>Durasi</span>
+            <select id="durasiCari">
+                <?php for ($hari = 1; $hari <= 14; $hari++): ?>
+                    <option value="<?= $hari ?>" <?= $hari === 1 ? 'selected' : '' ?>><?= $hari ?> hari</option>
+                <?php endfor; ?>
+            </select>
+        </label>
+        <label class="search-field search-budget">
+            <span>Harga per hari</span>
+            <select id="filterHarga">
+                <option value="">Semua harga</option>
+                <option value="low">Di bawah Rp300 ribu</option>
+                <option value="mid">Rp300–750 ribu</option>
+                <option value="high">Di atas Rp750 ribu</option>
+            </select>
+        </label>
+        <button type="button" class="btn btn-primary search-submit" id="cariSubmit">Cari mobil <span aria-hidden="true">→</span></button>
+    </form>
+    <div class="fleet-result small text-secondary mb-3" id="hasilArmada" aria-live="polite"></div>
+    <?php endif; ?>
 
     <?php if ($jumlah_unit === 0): ?>
         <div class="panel text-center py-5">
@@ -19,11 +63,15 @@
             <?php endif; ?>
         </div>
     <?php else: ?>
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-4">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-4" id="daftarArmada">
         <?php foreach ($daftar_mobil as $m):
-            $disewa = (bool)$m['sedang_disewa'];
+            $disewa = db_bool($m['sedang_disewa']);
         ?>
-        <div class="col" data-status="<?= $disewa ? 'disewa' : 'tersedia' ?>">
+        <div class="col fleet-item" data-status="<?= $disewa ? 'disewa' : 'tersedia' ?>"
+             data-name="<?= e($m['merk_mobil'] . ' ' . $m['no_polisi']) ?>"
+             data-transmission="<?= e(strtolower($m['tipe_transmisi'])) ?>"
+             data-price="<?= (int)$m['harga_per_hari'] ?>"
+             data-periods="<?= e($m['periods'] ?? '[]') ?>">
             <article class="unit <?= $disewa ? 'is-out' : '' ?>">
                 <div class="unit-pic tone-<?= (int)$m['id'] % 6 ?>">
                     <?php if (!empty($m['foto'])): ?>
@@ -31,7 +79,7 @@
                     <?php else: ?>
                         <svg class="car" viewBox="0 0 240 100"><use href="#ic-car"/></svg>
                     <?php endif; ?>
-                    <span class="status <?= $disewa ? 'status-out' : 'status-in' ?>"><?= $disewa ? 'Disewa' : 'Tersedia' ?></span>
+                    <span class="status <?= $disewa ? 'status-out' : 'status-in' ?> availability-badge"><?= $disewa ? 'Disewa' : 'Tersedia' ?></span>
 
                     <?php if ($peran === 'admin'): ?>
                     <form method="POST" action="proses.php" enctype="multipart/form-data" class="photo-form">
@@ -53,13 +101,22 @@
                     <span class="plate"><?= e($m['no_polisi']) ?></span>
                     <div class="unit-foot">
                         <div class="price"><?= rupiah($m['harga_per_hari']) ?><small> / hari</small></div>
-                        <?php if ($disewa): ?>
-                            <span class="back-info">Kembali <?= tanggal_indo($m['tgl_kembali']) ?></span>
-                        <?php else: ?>
-                            <button class="btn btn-accent btn-sm px-3" data-bs-toggle="modal"
+                        <div class="unit-actions d-flex align-items-center gap-2">
+                            <?php if ($peran === 'admin'): ?>
+                            <button type="button" class="btn btn-outline-primary btn-sm"
+                                    data-bs-toggle="modal" data-bs-target="#modalEditUnit"
+                                    data-id="<?= (int)$m['id'] ?>"
+                                    data-nopol="<?= e($m['no_polisi']) ?>"
+                                    data-merk="<?= e($m['merk_mobil']) ?>"
+                                    data-transmisi="<?= e($m['tipe_transmisi']) ?>"
+                                    data-harga="<?= (int)$m['harga_per_hari'] ?>">Edit</button>
+                            <?php endif; ?>
+                            <button type="button" class="btn btn-accent btn-sm px-3" data-bs-toggle="modal"
                                     data-bs-target="<?= $peran === 'admin' ? '#modalSewa' : '#modalPesan' ?>"
-                                    data-mobil="<?= (int)$m['id'] ?>"><?= $peran === 'admin' ? 'Sewakan' : 'Pesan' ?></button>
-                        <?php endif; ?>
+                                    data-mobil="<?= (int)$m['id'] ?>"
+                                    data-label-available="<?= $peran === 'admin' ? 'Sewakan' : 'Pesan' ?>"
+                                    <?= $disewa ? 'disabled' : '' ?>><?= $peran === 'admin' ? 'Sewakan' : 'Pesan' ?></button>
+                        </div>
                     </div>
                 </div>
             </article>

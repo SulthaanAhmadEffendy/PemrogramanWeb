@@ -8,16 +8,18 @@
                 <h2 class="modal-title" id="judulSewa">Catat sewa di kantor</h2>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
+
             <div class="modal-body">
                 <label for="nama_penyewa" class="form-label">Nama penyewa</label>
-                <input type="text" id="nama_penyewa" name="nama_penyewa" class="form-control mb-3" autocomplete="off" required>
+                <input type="text" id="nama_penyewa" name="nama_penyewa" class="form-control mb-3" autocomplete="off" maxlength="100" required>
 
                 <label for="mobil_id" class="form-label">Unit</label>
                 <select id="mobil_id" name="mobil_id" class="form-select mb-3" required>
                     <option value="" disabled selected>Pilih unit</option>
                     <?php foreach ($daftar_mobil as $m): ?>
-                        <option value="<?= (int)$m['id'] ?>" data-tarif="<?= (int)$m['harga_per_hari'] ?>" <?= $m['sedang_disewa'] ? 'disabled' : '' ?>>
-                            <?= e($m['no_polisi']) ?> - <?= e($m['merk_mobil']) ?><?= $m['sedang_disewa'] ? ' (sedang disewa)' : '' ?>
+                        <option value="<?= (int)$m['id'] ?>" data-tarif="<?= (int)$m['harga_per_hari'] ?>"
+                                data-periods="<?= e($m['periods'] ?? '[]') ?>">
+                            <?= e($m['no_polisi']) ?> - <?= e($m['merk_mobil']) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -25,11 +27,11 @@
                 <div class="row g-3">
                     <div class="col-7">
                         <label for="tanggal_pinjam" class="form-label">Tanggal pinjam</label>
-                        <input type="date" id="tanggal_pinjam" name="tanggal_pinjam" class="form-control" value="<?= date('Y-m-d') ?>" required>
+                        <input type="date" id="tanggal_pinjam" name="tanggal_pinjam" class="form-control" value="<?= date('Y-m-d') ?>" min="<?= date('Y-m-d') ?>" required>
                     </div>
                     <div class="col-5">
                         <label for="lama_hari" class="form-label">Lama (hari)</label>
-                        <input type="number" id="lama_hari" name="lama_hari" class="form-control" min="1" value="1" required>
+                        <input type="number" id="lama_hari" name="lama_hari" class="form-control" min="1" max="365" value="1" required>
                     </div>
                 </div>
             </div>
@@ -55,7 +57,7 @@
                 <div class="row g-3 mb-3">
                     <div class="col-7">
                         <label for="no_polisi" class="form-label">Nomor polisi</label>
-                        <input type="text" id="no_polisi" name="no_polisi" class="form-control" placeholder="N 1234 XX" required>
+                        <input type="text" id="no_polisi" name="no_polisi" class="form-control" maxlength="15" placeholder="N 1234 XX" required>
                     </div>
                     <div class="col-5">
                         <label for="tipe_transmisi" class="form-label">Transmisi</label>
@@ -65,17 +67,59 @@
                         </select>
                     </div>
                 </div>
+
                 <label for="merk_mobil" class="form-label">Merk dan tipe</label>
-                <input type="text" id="merk_mobil" name="merk_mobil" class="form-control mb-3" placeholder="Toyota Avanza" required>
+                <input type="text" id="merk_mobil" name="merk_mobil" class="form-control mb-3" maxlength="80" placeholder="Toyota Avanza" required>
                 <label for="harga_per_hari" class="form-label">Tarif per hari (Rp)</label>
                 <input type="number" id="harga_per_hari" name="harga_per_hari" class="form-control mb-3" min="0" required>
                 <label for="foto" class="form-label">Foto mobil <span class="text-secondary fw-normal">(JPG, PNG, WebP, maks. 2 MB)</span></label>
                 <input type="file" id="foto" name="foto" class="form-control" accept="image/jpeg,image/png,image/webp">
                 <img id="previewFoto" class="preview" alt="" hidden>
             </div>
+
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
                 <button type="submit" class="btn btn-primary px-4">Simpan unit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditUnit" tabindex="-1" aria-labelledby="judulEditUnit" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" method="POST" action="proses.php" enctype="multipart/form-data">
+            <?= csrf_field() ?>
+            <input type="hidden" name="aksi" value="ubah_mobil">
+            <input type="hidden" name="id" id="editUnitId">
+            <div class="modal-header">
+                <h2 class="modal-title" id="judulEditUnit">Ubah data unit</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-7">
+                        <label for="editNoPolisi" class="form-label">Nomor polisi</label>
+                        <input type="text" id="editNoPolisi" name="no_polisi" class="form-control" maxlength="15" required>
+                    </div>
+                    <div class="col-5">
+                        <label for="editTransmisi" class="form-label">Transmisi</label>
+                        <select id="editTransmisi" name="tipe_transmisi" class="form-select" required>
+                            <option value="Manual">Manual</option>
+                            <option value="Auto">Otomatis</option>
+                        </select>
+                    </div>
+                </div>
+                <label for="editMerk" class="form-label">Merk dan tipe</label>
+                <input type="text" id="editMerk" name="merk_mobil" class="form-control mb-3" maxlength="80" required>
+                <label for="editHarga" class="form-label">Tarif per hari (Rp)</label>
+                <input type="number" id="editHarga" name="harga_per_hari" class="form-control mb-3" min="0" step="1" required>
+                <label for="fotoEdit" class="form-label">Ganti foto <span class="text-secondary fw-normal">(opsional, maks. 2 MB)</span></label>
+                <input type="file" id="fotoEdit" name="foto" class="form-control" accept="image/jpeg,image/png,image/webp">
+                <img id="previewFotoEdit" class="preview" alt="Pratinjau foto baru" hidden>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary px-4">Simpan perubahan</button>
             </div>
         </form>
     </div>

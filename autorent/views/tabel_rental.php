@@ -1,5 +1,5 @@
 <section id="sewa">
-    <h2 class="section-title mb-3">Sewa berjalan</h2>
+    <h2 class="section-title mb-3">Pesanan disetujui &amp; sewa berjalan</h2>
     <div class="panel p-0">
     <?php if ($jumlah_aktif > 0): ?>
         <div class="table-responsive">
@@ -11,6 +11,7 @@
             <?php foreach ($daftar_rental as $row):
                 $kembali = tgl_kembali($row['tanggal_pinjam'], $row['lama_hari']);
                 $telat   = $kembali < date('Y-m-d');
+                $belum_mulai = $row['tanggal_pinjam'] > date('Y-m-d');
             ?>
                 <tr>
                     <td>
@@ -35,11 +36,15 @@
                     </td>
                     <td class="text-end fw-semibold text-nowrap"><?= rupiah($row['total_biaya']) ?></td>
                     <td class="text-end">
+                        <?php if ($belum_mulai): ?>
+                            <span class="status status-wait">Belum dimulai</span>
+                        <?php else: ?>
                         <form method="POST" action="proses.php" onsubmit="return confirm('Mobil <?= e($row['no_polisi']) ?> sudah kembali?');">
                             <?= csrf_field() ?><input type="hidden" name="aksi" value="selesai">
                             <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                             <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">Tandai kembali</button>
                         </form>
+                        <?php endif; ?>
                     </td>
                 </tr>
             <?php endforeach; ?>

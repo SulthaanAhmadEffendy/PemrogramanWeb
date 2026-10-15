@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS transaksi_rental (
     nama_penyewa   VARCHAR(100) NOT NULL,
     tanggal_pinjam DATE         NOT NULL,
     lama_hari      INTEGER      NOT NULL CHECK (lama_hari >= 1),
-    total_biaya    INTEGER      NOT NULL
+    total_biaya    BIGINT       NOT NULL
 );
 
 
@@ -31,3 +31,4 @@ CREATE TABLE IF NOT EXISTS pengguna (
 ALTER TABLE armada_mobil     ADD COLUMN IF NOT EXISTS foto VARCHAR(255);
 ALTER TABLE transaksi_rental ADD COLUMN IF NOT EXISTS pengguna_id INTEGER REFERENCES pengguna(id) ON DELETE SET NULL;
 ALTER TABLE transaksi_rental ADD COLUMN IF NOT EXISTS status_sewa VARCHAR(12) NOT NULL DEFAULT 'berjalan';
+ALTER TABLE transaksi_rental ALTER COLUMN total_biaya TYPE BIGINT;

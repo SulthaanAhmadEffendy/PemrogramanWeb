@@ -11,6 +11,10 @@ function e($teks) {
     return htmlspecialchars((string)$teks, ENT_QUOTES, 'UTF-8');
 }
 
+function db_bool($nilai) {
+    return $nilai === true || $nilai === 1 || in_array($nilai, ['1', 't', 'true'], true);
+}
+
 function tanggal_indo($tgl) {
     $bulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
     $t = strtotime($tgl);
@@ -19,6 +23,11 @@ function tanggal_indo($tgl) {
 
 function tgl_kembali($tanggal_pinjam, $lama_hari) {
     return date('Y-m-d', strtotime($tanggal_pinjam . ' +' . (int)$lama_hari . ' days'));
+}
+
+function tanggal_valid($tanggal) {
+    $nilai = DateTime::createFromFormat('!Y-m-d', (string)$tanggal);
+    return $nilai && $nilai->format('Y-m-d') === $tanggal;
 }
 
 
@@ -54,13 +63,27 @@ function label_status($s) {
 
 function ambil_semua_mobil(PDO $pdo) {
     $sql = "SELECT m.*, (r.id IS NOT NULL) AS sedang_disewa,
+                   COALESCE(jadwal.periods, '[]'::json) AS periods,
                    r.nama_penyewa, (r.tanggal_pinjam + r.lama_hari) AS tgl_kembali
             FROM armada_mobil m
             LEFT JOIN LATERAL (
                 SELECT * FROM transaksi_rental t
                 WHERE t.mobil_id = m.id AND t.status_sewa = 'berjalan'
+                  AND t.tanggal_pinjam <= CURRENT_DATE
+                  AND (t.tanggal_pinjam + t.lama_hari) > CURRENT_DATE
                 ORDER BY t.tanggal_pinjam DESC LIMIT 1
             ) r ON true
+            LEFT JOIN LATERAL (
+                SELECT json_agg(json_build_object(
+                    'start', t.tanggal_pinjam::text,
+                    'end', (t.tanggal_pinjam + t.lama_hari)::text,
+                    'status', t.status_sewa
+                )) AS periods
+                FROM transaksi_rental t
+                WHERE t.mobil_id = m.id AND t.status_sewa IN ('menunggu', 'berjalan')
+                  AND (t.status_sewa = 'berjalan'
+                       OR (t.tanggal_pinjam + t.lama_hari) > CURRENT_DATE)
+            ) jadwal ON true
             ORDER BY m.merk_mobil ASC";
     return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 }
@@ -76,7 +99,11 @@ function ambil_rental_aktif(PDO $pdo) {
 function ambil_permintaan(PDO $pdo) {
     $sql = "SELECT t.*, m.merk_mobil, m.no_polisi, m.foto,
                    EXISTS (SELECT 1 FROM transaksi_rental b
-                           WHERE b.mobil_id = t.mobil_id AND b.status_sewa = 'berjalan') AS unit_sibuk
+                           WHERE b.mobil_id = t.mobil_id AND b.id <> t.id
+                             AND b.status_sewa IN ('menunggu', 'berjalan')
+                             AND (b.status_sewa = 'berjalan'
+                                  OR (b.tanggal_pinjam < (t.tanggal_pinjam + t.lama_hari)
+                                      AND (b.tanggal_pinjam + b.lama_hari) > t.tanggal_pinjam))) AS unit_sibuk
             FROM transaksi_rental t JOIN armada_mobil m ON t.mobil_id = m.id
             WHERE t.status_sewa = 'menunggu'
             ORDER BY t.id ASC";
@@ -92,9 +119,41 @@ function ambil_pesanan_user(PDO $pdo, $uid) {
 }
 
 function unit_sedang_disewa(PDO $pdo, $mobil_id) {
-    $stmt = $pdo->prepare("SELECT 1 FROM transaksi_rental WHERE mobil_id = ? AND status_sewa = 'berjalan'");
+    $stmt = $pdo->prepare("SELECT 1 FROM transaksi_rental
+                           WHERE mobil_id = ? AND status_sewa = 'berjalan'
+                             AND tanggal_pinjam <= CURRENT_DATE
+                             AND (tanggal_pinjam + lama_hari) > CURRENT_DATE");
     $stmt->execute([$mobil_id]);
     return (bool)$stmt->fetchColumn();
+}
+
+function unit_bentrok_periode(PDO $pdo, $mobil_id, $mulai, $selesai, $abaikan_id = null) {
+    $sql = "SELECT 1 FROM transaksi_rental
+            WHERE mobil_id = ? AND status_sewa IN ('menunggu', 'berjalan')
+              AND (status_sewa = 'berjalan'
+                   OR (tanggal_pinjam < ? AND (tanggal_pinjam + lama_hari) > ?))";
+    $parameter = [$mobil_id, $selesai, $mulai];
+    if ($abaikan_id !== null) {
+        $sql .= " AND id <> ?";
+        $parameter[] = $abaikan_id;
+    }
+    $stmt = $pdo->prepare($sql . " LIMIT 1");
+    $stmt->execute($parameter);
+    return (bool)$stmt->fetchColumn();
+}
+
+function unit_tersedia_pada(array $mobil, $mulai, $lama_hari = 1) {
+    $selesai = tgl_kembali($mulai, $lama_hari);
+    $periode = json_decode($mobil['periods'] ?? '[]', true) ?: [];
+    foreach ($periode as $pesanan) {
+        if ($pesanan['status'] === 'berjalan') {
+            return false;
+        }
+        if ($pesanan['start'] < $selesai && $pesanan['end'] > $mulai) {
+            return false;
+        }
+    }
+    return true;
 }
 
 

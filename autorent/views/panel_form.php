@@ -23,8 +23,8 @@
                     <option value="" disabled selected>Pilih unit</option>
                     <?php foreach ($daftar_mobil as $m): ?>
                         <option value="<?= (int)$m['id'] ?>" data-tarif="<?= (int)$m['harga_per_hari'] ?>"
-                                <?= $m['sedang_disewa'] ? 'disabled' : '' ?>>
-                            <?= e($m['no_polisi']) ?> - <?= e($m['merk_mobil']) ?><?= $m['sedang_disewa'] ? ' (sedang disewa)' : '' ?>
+                                <?= db_bool($m['sedang_disewa']) ? 'disabled' : '' ?>>
+                            <?= e($m['no_polisi']) ?> - <?= e($m['merk_mobil']) ?><?= db_bool($m['sedang_disewa']) ? ' (sedang disewa)' : '' ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
